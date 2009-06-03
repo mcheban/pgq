@@ -1,0 +1,26 @@
+Pgq
+===
+
+ActiveRecord extension to work with PgQ Skytools for PostgreSQL. 
+ 
+Details about PgQ: 
+*  http://skytools.projects.postgresql.org/doc/pgq-sql.html
+*  http://skytools.projects.postgresql.org/pgq/files/external-sql.html
+*  http://skytools.projects.postgresql.org/doc/pgq-admin.html
+
+Install
+=======
+
+1. Install skytools (http://pgfoundry.org/projects/skytools)
+
+2. Install PgQ schema in your DB
+
+    rake pgq:install 
+
+Example
+=======
+
+Example goes here.
+
+
+Copyright (c) 2009 Andrey Stikheev, released under the MIT license
