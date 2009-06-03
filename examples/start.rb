@@ -1,0 +1,5 @@
+require 'rubygems'
+require 'activerecord'
+require 'pgq'
+require 'pgq_test'
+require 'pgq_runner'

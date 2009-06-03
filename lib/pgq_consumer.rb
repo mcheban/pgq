@@ -88,7 +88,7 @@ class PgqConsumer
   end
 
   def prepare_event event
-    event
+    PgqEvent.new event
   end
 
   def add_event data
