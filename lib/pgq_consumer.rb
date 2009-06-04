@@ -49,7 +49,6 @@ class PgqConsumer
   end
   
   def finish_batch(count = nil)
-    UnifiedStat.update_stat(Time.now.strftime("%Y-%m-%d"), 'pgq_stat', [self.class.to_s.underscore, count.to_i]) if count #нули тоже пишем
     ActiveRecord::Base.pgq_finish_batch(@batch_id)
   end
 

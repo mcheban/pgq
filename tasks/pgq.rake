@@ -9,6 +9,93 @@ namespace :pgq do
 		"#{RAILS_ROOT + "/config/pgq/#{RAILS_ENV}.ini"}"
 	end
 
+	def generate_connectin_string db
+		conn_str = "dbname=#{db['database']}"
+		conn_str += " user=#{db['username']}" if db['username']
+		conn_str += " host=#{db['host']}" if db['host']
+		conn_str += " port=#{db['port']}" if db['port']
+		conn_str += " pass=#{db['pass']}" if db['pass']
+		conn_str
+	end
+
+	desc "Generate PgQ and Londiste config from database.yml"
+	task :gen_config do
+		unless File.exists? File.join(RAILS_ROOT, 'config', 'pgq')
+			puts "ERROR: directory config/pgq do not exists"
+			exit
+		end
+		unless File.exists? File.join(RAILS_ROOT, 'config', 'database.yml')
+			puts "ERROR: file config/database.yml do not exists"
+			exit
+		end
+
+		if File.exists? pgq_config
+			puts "ERROR: file #{pgq_config} already exists"
+			exit
+		end
+
+		config = YAML.load File.read(File.join(RAILS_ROOT, 'config', 'database.yml'))
+
+		if config[RAILS_ENV].nil? or config[RAILS_ENV].empty?
+			puts "ERROR: there no '#{RAILS_ENV}' section in database.yml"
+			exit
+		end
+
+		unless config[RAILS_ENV]['adapter'] == 'postgresql'
+			puts "ERROR: only postgresql adapter support PgQ"
+			exit
+		end
+
+		file = <<END
+[pgqadm]
+job_name = pgq_job
+db = #{generate_connectin_string config[RAILS_ENV]}
+# how often to run maintenance [seconds]
+maint_delay = 600
+# how often to check for activity [seconds]
+loop_delay = 0.1
+logfile = ./log/%(job_name)s.log
+pidfile = ./tmp/%(job_name)s.pid
+END
+
+		f = File.new pgq_config, 'w'
+		f.write file
+
+		slave = config["#{RAILS_ENV}_slave"]
+		if slave.nil? or slave.empty? or slave['adapter'] != 'postgresql'
+			puts "WARNING: '#{RAILS_ENV}_slave' section not found or incorrect in database.yml"
+		else
+			file = <<END
+[londiste]
+
+# should be unique
+job_name = master_to_slave
+
+# source queue location
+provider_db = #{generate_connectin_string config[RAILS_ENV]}
+
+# target database - it's preferable to run "londiste replay"
+# on same machine and use unix-socket or localhost to connect
+subscriber_db = #{generate_connectin_string config["#{RAILS_ENV}_slave"]}
+
+# source queue name
+pgq_queue_name = londiste.replika
+
+logfile = ./log/%(job_name)s.log
+pidfile = ./tmp/pids/%(job_name)s.pid
+
+# how often to poll event from provider
+#loop_delay = 1
+
+# max locking time on provider (in seconds, float)
+#lock_timeout = 10.0
+END
+			f.write file
+		end
+
+		f.close
+	end
+
   desc "Install PgQ"
   task :install do
     puts "installing pgq, running: #{pgq} install"

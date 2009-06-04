@@ -4,13 +4,12 @@ class PgqTest < PgqConsumer
 
   def initialize(queue, logger = Rails.logger)
     @logger = logger
-    super(QUEUE_NAME, CacheUpdater::PGQ_CONSUMER)
+    super(QUEUE_NAME, PgqRunner::PGQ_CONSUMER)
   end
 
   def perform_event event
     if event.type == TYPE
-      event.data.each do |id|
-				puts id * id
+				puts event.data * event.data
       end
     else
       event_failed event.id, "Unknown event type '#{event.type}'"

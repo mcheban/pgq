@@ -13,14 +13,74 @@ Install
 
 1. Install skytools (http://pgfoundry.org/projects/skytools)
 
-2. Install PgQ schema in your DB
+2. Add require 'pgq' to Rakefile to enable pgq rake tasks
+
+3. Create PgQ config in config/pgq/#{RAILS_ENV}.ini or run
+
+	rake pgq:gen_config
+
+to generate PgQ config from your database.yml. If there a development_slave
+section in your database.yml, then londiste config will be generated/
+
+4. Install PgQ schema in your DB
 
     rake pgq:install 
+
+5. If you need an londiste replication, run
+	
+	rake londiste:provider:install
+	rake londiste:subscriber:install
+
+	rake londiste:update
+
+to install londiste on provider and subscriber (slave) and add tables to
+replication. 
+
+6. Run 
+
+	rake pgq:start
+
+to start PgQ ticker - process, that maintain PgQ queue. Without this queue
+will not work. Also run
+
+	rake londiste:start
+
+to start Londiste replication.
+
+Run
+
+	rake londiste:stat
+
+to see replication status.
 
 Example
 =======
 
-Example goes here.
+See examples folder for PgqTest and PgqRunner classes.
 
+To start using pgq add queue and subscription to PgQ (good place for this
+is migration).
 
-Copyright (c) 2009 Andrey Stikheev, released under the MIT license
+	ActiveRecord::Base.pgq_create_queue(PgqTest::QUEUE_NAME)
+	ActiveRecord::Base.pgq_register_consumer(PgqTest::QUEUE_NAME,
+		PgqRunner::PGQ_CONSUMER)
+
+After this you can run consumers:
+
+	runner = PgqRunner.new :queues => [PgqTest::QUEUE_NAME], :watch_file => 'tmp/stop.txt'
+
+Because of PgQ process events in batches, next time you run consumer after
+Ctrl-C, events starts to process from the begining of the batch. Therefore
+when consumer see watch_file, it mark all events to retry and finish
+current batch.
+
+	runner.run
+
+In other console call PgqTest.add_event 10 and return to first console. If
+you see 100 - all is ok.
+
+Failed events mark as failed, see PgQ docs for more information.
+
+Sorry for my English ;-)
+
+Copyright (c) 2009 Andrey Stikheev, Ivan Evtukhovich, released under the MIT license

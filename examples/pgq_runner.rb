@@ -6,10 +6,10 @@ class PgqRunner
   SLEEP_TIME = 0.5
   
   CACHE_QUEUES = {
-    PgqTest::QUEUE_NAME => PgqIndexer
+    PgqTest::QUEUE_NAME => PgqTest
   }
 
-  PGQ_CONSUMER = "CacheUpdater"
+  PGQ_CONSUMER = "pgq_runner"
   
   def initialize(hint)
     @logger = hint[:logger] || Rails.logger 

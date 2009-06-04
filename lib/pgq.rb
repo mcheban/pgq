@@ -96,4 +96,6 @@ end
 load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
 require 'pgq_event'
 
-ActiveRecord::Base.extend(Pgq)
+if defined?(ActiveRecord)
+	ActiveRecord::Base.extend(Pgq)
+end
