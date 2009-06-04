@@ -1,5 +1,3 @@
-load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
-
 module Pgq
   
   #-- Function: pgq.create_queue(1)
@@ -62,7 +60,7 @@ module Pgq
   #             order by tick_queue desc, tick_id desc limit 1
   #            ) as ticker_lag
   def pgq_get_queue_info(queue_name)
-    connection.select_value(sanitize_sql ["SELECT pgq.get_queue_info(:queue_name)", {:queue_name => queue_name}])
+    connection.select_value sanitize_sql(["SELECT pgq.get_queue_info(:queue_name)", {:queue_name => queue_name}])
   end
 
   #-- Function: pgq.force_tick(2)
@@ -82,11 +80,11 @@ module Pgq
   #-- Returns:
   #--      Currently last tick id.
   def pgq_force_tick(queue_name)
-    last_tick = connection.select_value(sanitize_sql ["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
-    current_tick = connection.select_value(sanitize_sql ["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
+    last_tick = connection.select_value sanitize_sql(["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
+    current_tick = connection.select_value sanitize_sql(["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
     cnt=0
     while last_tick!=current_tick and cnt<100
-      current_tick = connection.select_value(sanitize_sql ["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
+      current_tick = connection.select_value sanitize_sql(["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
       sleep 0.01
       cnt+=1
     end
@@ -94,3 +92,8 @@ module Pgq
   end
       
 end
+
+load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
+require 'pgq_event'
+
+ActiveRecord::Base.extend(Pgq)

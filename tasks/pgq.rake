@@ -1,3 +1,5 @@
+require 'rake'
+
 namespace :pgq do
   def pgq
     "pgqadm.py #{pgq_config}"
