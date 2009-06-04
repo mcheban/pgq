@@ -9,7 +9,7 @@ spec = Gem::Specification.new do |s|
   s.summary = 'Useful tools for working with PgQ and Londiste'
   s.description = 'This gem contains rake tasks, ActiveRecord extensions
   useful for work with PgQ and Londiste Skytools'
-  candidates = Dir.glob("{bin,docs,lib,tests,examples}/**/*")
+  candidates = Dir.glob("{bin,tasks,docs,lib,tests,examples}/**/*")
   s.files = candidates.delete_if do |item|
     item.include?("CVS") || item.include?(".svn") || item.include?("rdoc") || item.include?("-pre20")
   end

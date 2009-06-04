@@ -1,3 +1,5 @@
+load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
+
 module Pgq
   
   #-- Function: pgq.create_queue(1)

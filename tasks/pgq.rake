@@ -1,19 +1,27 @@
 namespace :pgq do
+  def pgq
+    "pgqadm.py #{pgq_config}"
+  end
+
+	def pgq_config
+		"#{RAILS_ROOT + "/config/pgq/#{RAILS_ENV}.ini"}"
+	end
+
   desc "Install PgQ"
   task :install do
-    puts "installing pgq, running: pgqadm.py #{RAILS_ROOT + "/config/pgq_tickers/#{RAILS_ENV}.ini"} install"
+    puts "installing pgq, running: #{pgq} install"
      
-    output = `pgqadm.py #{RAILS_ROOT + "/config/pgq_tickers/#{RAILS_ENV}.ini"} install 2>&1`
+    output = `#{pgq} install 2>&1`
     puts output
     if output =~ /pgq is installed/ || output =~ /Reading from.*?pgq.sql$/
       puts "PgQ installed successfully"
     else
-      raise "Something went wrong(see above)... Check that you install skytools package and create #{RAILS_ROOT + "/config/pgq_tickers/#{RAILS_ENV}.ini"}"
+      raise "Something went wrong(see above)... Check that you install skytools package and create #{pgq_config}"
     end
   end
   desc "Start PgQ ticker daemon"
   task :start do
-    output = `pgqadm.py #{RAILS_ROOT + "/config/pgq_tickers/#{RAILS_ENV}.ini"} -d ticker 2>&1`
+    output = `#{pgq} -d ticker 2>&1`
     if output.empty?
       puts "ticker daemon started"
     else
@@ -22,7 +30,7 @@ namespace :pgq do
   end
   desc "Stop PgQ ticker daemon"
   task :stop do
-    output = `pgqadm.py #{RAILS_ROOT + "/config/pgq_tickers/#{RAILS_ENV}.ini"} -s 2>&1`
+    output = `#{pgq} -s 2>&1`
     if output.empty?
       puts "ticker daemon stoped"
     else
@@ -33,8 +41,12 @@ end
 
 namespace :londiste do
   def londiste
-    "londiste.py #{RAILS_ROOT + "/config/pgq_tickers/londiste_#{RAILS_ENV}.ini"}"
+    "londiste.py #{londiste_config}"
   end
+
+	def londiste_config
+		"#{RAILS_ROOT + "/config/pgq/londiste_#{RAILS_ENV}.ini"}"
+	end
 
   namespace :provider do
     desc "Install Londiste on provider"
@@ -46,7 +58,7 @@ namespace :londiste do
       if output =~ /londiste is installed/ || output =~ /Reading from.*?londiste.sql$/
         puts "Londiste installed successfully"
       else
-        raise "Something went wrong(see above)... Check that you install skytools package and create #{RAILS_ROOT + "/config/pgq_tickers/londiste_#{RAILS_ENV}.ini"}"
+        raise "Something went wrong(see above)... Check that you install skytools package and create #{londiste_config}"
       end
     end
 
@@ -74,7 +86,7 @@ namespace :londiste do
       if output =~ /londiste is installed/ || output =~ /Reading from.*?londiste.sql$/
         puts "Londiste installed successfully"
       else
-        raise "Something went wrong(see above)... Check that you install skytools package and create #{RAILS_ROOT + "/config/pgq_tickers/londiste_#{RAILS_ENV}.ini"}"
+        raise "Something went wrong(see above)... Check that you install skytools package and create #{londiste_config}"
       end
     end
 
