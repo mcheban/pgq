@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{pgq}
-  s.version = "0.0.2"
+  s.version = "0.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Ivan Evtukhovich", "Andrey Stikheev"]
@@ -15,10 +15,12 @@ Gem::Specification.new do |s|
     ".gitignore",
      "MIT-LICENSE",
      "README",
+     "Rakefile",
      "VERSION",
      "examples/pgq_runner.rb",
      "examples/pgq_test.rb",
      "init.rb",
+     "lib/migration.rb",
      "lib/pgq.rb",
      "lib/pgq_consumer.rb",
      "lib/pgq_event.rb",

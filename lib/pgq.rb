@@ -93,9 +93,29 @@ module Pgq
       
 end
 
+module Slave
+  def slave
+    if Rails.configuration.database_configuration[RAILS_ENV + "_slave"]
+			old_connection = SlaveDB.connection
+      ActiveRecord::Base.connection = SlaveDB.connection
+      result = yield
+      ActiveRecord::Base.connection = old_connection
+      return result
+    else
+      return yield
+    end
+  end
+end
+
 load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
 require 'pgq_event'
+require 'migration'
 
 if defined?(ActiveRecord)
 	ActiveRecord::Base.extend(Pgq)
+	ActiveRecord::Base.extend(Slave)
+
+	class SlaveDB < ::ActiveRecord::Base
+		establish_connection(RAILS_ENV + "_slave") if ActiveRecord::Base.configurations[RAILS_ENV + "_slave"]
+	end
 end

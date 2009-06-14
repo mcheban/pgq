@@ -227,3 +227,20 @@ namespace :londiste do
     Rake::Task["londiste:subscriber:add"].invoke
   end
 end
+
+
+namespace :db do
+  task :migrate => :environment do
+    ActiveRecord::Migration.verbose = ENV["VERBOSE"] ? ENV["VERBOSE"] == "true" : true
+    ActiveRecord::Migrator.migrate("db/migrate/", ENV["VERSION"] ? ENV["VERSION"].to_i : nil)
+
+    #run migration on slave server if it defined
+    unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
+      ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
+      ActiveRecord::Base.run_on_slave_db = true
+      ActiveRecord::Migrator.migrate("db/migrate/", ENV["VERSION"] ? ENV["VERSION"].to_i : nil)
+    end
+    
+    Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
+  end
+end
