@@ -243,4 +243,40 @@ namespace :db do
     
     Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
   end
+
+  namespace :migrate do
+    desc 'Runs the "up" for a given migration VERSION.'
+    task :up => :environment do
+      version = ENV["VERSION"] ? ENV["VERSION"].to_i : nil
+      raise "VERSION is required" unless version
+      ActiveRecord::Migrator.run(:up, "db/migrate/", version)
+			#run migration up on slave server if it defined
+			unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
+				ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
+				ActiveRecord::Base.run_on_slave_db = true
+				ActiveRecord::Migrator.run(:up, "db/migrate/", version)
+			end
+      Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
+    end
+
+    desc 'Runs the "down" for a given migration VERSION.'
+    task :down => :environment do
+      version = ENV["VERSION"] ? ENV["VERSION"].to_i : nil
+      raise "VERSION is required" unless version
+      ActiveRecord::Migrator.run(:down, "db/migrate/", version)
+			unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
+				ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
+				ActiveRecord::Base.run_on_slave_db = true
+				ActiveRecord::Migrator.run(:down, "db/migrate/", version)
+			end
+      Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
+    end
+  end
+
+  desc 'Rolls the schema back to the previous version. Specify the number of steps with STEP=n'
+  task :rollback => :environment do
+    step = ENV['STEP'] ? ENV['STEP'].to_i : 1
+    ActiveRecord::Migrator.rollback('db/migrate/', step)
+    Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
+  end
 end
