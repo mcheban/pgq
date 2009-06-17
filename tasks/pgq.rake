@@ -134,7 +134,7 @@ namespace :londiste do
   end
 
 	def londiste_config
-		"#{RAILS_ROOT + "/config/pgq/londiste_#{RAILS_ENV}.ini"}"
+		pgq_config
 	end
 
   namespace :provider do
