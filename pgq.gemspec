@@ -2,12 +2,12 @@
 
 Gem::Specification.new do |s|
   s.name = %q{pgq}
-  s.version = "0.1.0"
+  s.version = "0.1.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Ivan Evtukhovich", "Andrey Stikheev"]
-  s.date = %q{2009-06-12}
-  s.email = ['evtuhovich@gmail.com', 'andrey.stikheev@gmail.com']
+  s.authors = ["Ivan Evtukhovich", "Andrey Stikheev", "Max Cheban"]
+  s.date = %q{2016-04-14}
+  s.email = ['evtuhovich@gmail.com', 'andrey.stikheev@gmail.com', 'mcheban@gmail.com']
   s.extra_rdoc_files = [
     "README"
   ]
@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
      "pgq.gemspec",
      "tasks/pgq.rake"
   ]
-  s.homepage = %q{http://github.com/evtuhovich/pgq}
+  s.homepage = %q{http://github.com/mcheban/pgq}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.3}

@@ -8,28 +8,28 @@ module Pgq
   #      0 - queue already exists
   #      1 - queue created
   def pgq_create_queue(queue_name)
-    connection.select_value("SELECT pgq.create_queue(#{connection.quote queue_name})").to_i
+    connection.select_value("SELECT pgq.create_queue(#{connection.quote(queue_name)})").to_i
   end
-  
+
   def pgq_drop_queue(queue_name)
-    connection.select_value("SELECT pgq.drop_queue(#{connection.quote queue_name})").to_i
+    connection.select_value("SELECT pgq.drop_queue(#{connection.quote(queue_name)})").to_i
   end
-  
+
   def pgq_insert_event(queue_name, ev_type, ev_data, extra1 = nil, extra2 = nil, extra3 = nil, extra4 = nil)
-    result = connection.select_value("SELECT pgq.insert_event(#{connection.quote queue_name}, #{connection.quote ev_type}, #{connection.quote ev_data}, #{connection.quote extra1}, #{connection.quote extra2}, #{connection.quote extra3}, #{connection.quote extra4})")
+    result = connection.select_value("SELECT pgq.insert_event(#{connection.quote(queue_name)}, #{connection.quote ev_type}, #{connection.quote ev_data}, #{connection.quote extra1}, #{connection.quote extra2}, #{connection.quote extra3}, #{connection.quote extra4})")
     result ? result.to_i : nil
   end
-  
+
   def pgq_register_consumer(queue_name, consumer_id)
-    connection.select_value("SELECT pgq.register_consumer(#{connection.quote queue_name}, #{connection.quote consumer_id})").to_i
+    connection.select_value("SELECT pgq.register_consumer(#{connection.quote(queue_name)}, #{connection.quote consumer_id})").to_i
   end
-  
+
   def pgq_unregister_consumer(queue_name, consumer_id)
-    connection.select_value("SELECT pgq.unregister_consumer(#{connection.quote queue_name}, #{connection.quote consumer_id})").to_i
+    connection.select_value("SELECT pgq.unregister_consumer(#{connection.quote(queue_name)}, #{connection.quote consumer_id})").to_i
   end
-  
+
   def pgq_next_batch(queue_name, consumer_id)
-    result = connection.select_value("SELECT pgq.next_batch(#{connection.quote queue_name}, #{connection.quote consumer_id})")
+    result = connection.select_value("SELECT pgq.next_batch(#{connection.quote(queue_name)}, #{connection.quote consumer_id})")
     result ? result.to_i : nil
   end
   
@@ -38,11 +38,11 @@ module Pgq
   end
   
   def pgq_event_failed(batch_id, event_id, reason)
-    connection.select_value(sanitize_sql(["SELECT pgq.event_failed(?, ?, ?)", batch_id, event_id, reason])).to_i
+    connection.select_value("SELECT pgq.event_failed(?, ?, ?)", batch_id, event_id, reason).to_i
   end
   
   def pgq_event_retry(batch_id, event_id, retry_seconds)
-    connection.select_value(sanitize_sql(["SELECT pgq.event_retry(?, ?, ?)", batch_id, event_id, retry_seconds])).to_i
+    connection.select_value("SELECT pgq.event_retry(?, ?, ?)", batch_id, event_id, retry_seconds).to_i
   end
   
   def pgq_finish_batch(batch_id)
@@ -60,7 +60,7 @@ module Pgq
   #             order by tick_queue desc, tick_id desc limit 1
   #            ) as ticker_lag
   def pgq_get_queue_info(queue_name)
-    connection.select_value sanitize_sql(["SELECT pgq.get_queue_info(:queue_name)", {:queue_name => queue_name}])
+    connection.select_value("SELECT pgq.get_queue_info(#{connection.quote(queue_name)})")
   end
 
   #-- Function: pgq.force_tick(2)
@@ -80,11 +80,11 @@ module Pgq
   #-- Returns:
   #--      Currently last tick id.
   def pgq_force_tick(queue_name)
-    last_tick = connection.select_value sanitize_sql(["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
-    current_tick = connection.select_value sanitize_sql(["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
+    last_tick = connection.select_value("SELECT pgq.force_tick(#{connection.quote(queue_name)})")
+    current_tick = connection.select_value("SELECT pgq.force_tick(#{connection.quote(queue_name)})")
     cnt=0
     while last_tick!=current_tick and cnt<100
-      current_tick = connection.select_value sanitize_sql(["SELECT pgq.force_tick(:queue_name)", {:queue_name => queue_name}])
+      current_tick = connection.select_value("SELECT pgq.force_tick(#{connection.quote(queue_name)})")
       sleep 0.01
       cnt+=1
     end
@@ -95,10 +95,10 @@ end
 
 module Slave
   def slave
-    if Rails.configuration.database_configuration[RAILS_ENV + "_slave"]
-      ActiveRecord::Base.establish_connection(RAILS_ENV + "_slave")
+    if Rails.configuration.database_configuration[Rails.env + "_slave"]
+      ActiveRecord::Base.establish_connection(Rails.env + "_slave")
       result = yield
-      ActiveRecord::Base.establish_connection(RAILS_ENV)
+      ActiveRecord::Base.establish_connection(Rails.env)
       return result
     else
       return yield
@@ -106,11 +106,11 @@ module Slave
   end
 end
 
-load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
+# load File.join(File.dirname(__FILE__), '..', 'tasks', 'pgq.rake')
 require 'pgq_event'
-require 'migration'
+# require 'migration'
 
 if defined?(ActiveRecord)
 	ActiveRecord::Base.extend(Pgq)
-	ActiveRecord::Base.extend(Slave)
+	# ActiveRecord::Base.extend(Slave)
 end

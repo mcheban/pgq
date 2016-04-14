@@ -7,8 +7,8 @@ class PgqConsumer
     self.consumer_id = consumer_id
   end
 
-  def self.quote text
-    ActiveRecord::Base.connection.quote text 
+  def self.quote(text)
+    ActiveRecord::Base.connection.quote(text)
   end
 
   def self.get_consumer_info
@@ -16,32 +16,28 @@ class PgqConsumer
   end
 
 
-  def self.failed_event_retry queue_name, consumer,event_id
+  def self.failed_event_retry(queue_name, consumer,event_id)
      ActiveRecord::Base.connection.select_value(
-             "select * from    pgq.failed_event_retry(#{self.quote queue_name}, #{self.quote consumer},#{event_id.to_i})")
+             "select * from pgq.failed_event_retry(#{self.quote(queue_name)}, #{self.quote(consumer)},#{event_id.to_i})")
   end
-    def self.failed_event_delete queue_name, consumer,event_id
+    def self.failed_event_delete(queue_name, consumer,event_id)
      ActiveRecord::Base.connection.select_value(
-             "select * from    pgq.failed_event_delete(#{self.quote queue_name}, #{self.quote consumer},#{event_id.to_i})")
+             "select * from pgq.failed_event_delete(#{self.quote(queue_name)}, #{self.quote(consumer)},#{event_id.to_i})")
   end
 
-  def self.failed_event_count queue_name, consumer
-     ActiveRecord::Base.connection.select_value("select * from pgq.failed_event_count(#{self.quote queue_name}, #{self.quote consumer})")
+  def self.failed_event_count(queue_name, consumer)
+     ActiveRecord::Base.connection.select_value("select * from pgq.failed_event_count(#{self.quote(queue_name)}, #{self.quote(consumer)})")
   end
 
-  def self.failed_event_list queue_name, consumer, cnt=nil, offset=nil
-      off=''
-     if(cnt)
-        off=",#{cnt.to_i},#{offset.to_i}"
-     end
-     ActiveRecord::Base.connection.select_all("select * from pgq.failed_event_list(#{self.quote queue_name}, #{self.quote consumer} #{off}) order by ev_id desc")
+  def self.failed_event_list(queue_name, consumer, cnt=nil, offset=nil)
+     offset_str = cnt ? ",#{cnt.to_i},#{offset.to_i}" : ''
+     ActiveRecord::Base.connection.select_all("select * from pgq.failed_event_list(#{self.quote(queue_name)}, #{self.quote(consumer)} #{offset_str}) order by ev_id desc")
   end
 
   def get_batch_events
     @batch_id = get_next_batch
-    return if !@batch_id
-    res = ActiveRecord::Base.pgq_get_batch_events(@batch_id)
-    res
+    return unless @batch_id
+    ActiveRecord::Base.pgq_get_batch_events(@batch_id)
   end
     
   def get_next_batch
@@ -62,7 +58,7 @@ class PgqConsumer
 
   def perform_batch(watch_file = nil)
     events = get_batch_events
-    logger.info "batch(#{queue}): #{get_next_batch} events: #{events.size}" if events.present?
+    logger.debug "batch(#{queue}): #{@batch_id} events: #{events.length}" if logger.present? && events.present?
 
     return if !events
 
@@ -70,7 +66,7 @@ class PgqConsumer
       if watch_file and File.exists?(watch_file)
         event_retry(event['ev_id'], 0)
       else
-        if RAILS_ENV and (RAILS_ENV == 'development' or RAILS_ENV == 'test')
+        if Rails.env.development? || Rails.env.test?
           perform_event(prepare_event(event))
         else
           begin
@@ -82,19 +78,19 @@ class PgqConsumer
       end
     end
 
-    finish_batch(events.size)
+    finish_batch(events.length)
     true
   end
 
-  def prepare_event event
-    PgqEvent.new event
+  def prepare_event(event)
+    PgqEvent.new(event)
   end
 
-  def add_event data
-    self.class.add_event data
+  def add_event(data)
+    self.class.add_event(data)
   end
 
-  def self.add_event data
+  def self.add_event(data)
     ActiveRecord::Base.pgq_insert_event(self.const_get('QUEUE_NAME'), self.const_get('TYPE'), data.to_yaml)
   end
   

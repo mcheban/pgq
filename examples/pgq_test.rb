@@ -9,8 +9,7 @@ class PgqTest < PgqConsumer
 
   def perform_event event
     if event.type == TYPE
-				puts event.data * event.data
-      end
+      puts event.data * event.data
     else
       event_failed event.id, "Unknown event type '#{event.type}'"
     end

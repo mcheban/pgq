@@ -5,51 +5,51 @@ namespace :pgq do
     "pgqadm.py #{pgq_config}"
   end
 
-	def pgq_config
-		"#{RAILS_ROOT + "/config/pgq/#{RAILS_ENV}.ini"}"
-	end
+  def pgq_config
+    File.join(Rails.root, "/config/pgq/#{Rails.env}.ini")
+  end
+  
+  def generate_connectin_string db
+    conn_str = "dbname=#{db['database']}"
+    conn_str += " user=#{db['username']}" if db['username']
+    conn_str += " host=#{db['host']}" if db['host']
+    conn_str += " port=#{db['port']}" if db['port']
+    conn_str += " pass=#{db['pass']}" if db['pass']
+    conn_str
+  end
 
-	def generate_connectin_string db
-		conn_str = "dbname=#{db['database']}"
-		conn_str += " user=#{db['username']}" if db['username']
-		conn_str += " host=#{db['host']}" if db['host']
-		conn_str += " port=#{db['port']}" if db['port']
-		conn_str += " pass=#{db['pass']}" if db['pass']
-		conn_str
-	end
+  desc "Generate PgQ and Londiste config from database.yml"
+  task :gen_config do
+    unless File.exists? File.join(Rails.root, 'config', 'pgq')
+      puts "ERROR: directory config/pgq do not exists"
+      exit
+    end
+    unless File.exists? File.join(Rails.root, 'config', 'database.yml')
+      puts "ERROR: file config/database.yml do not exists"
+      exit
+    end
 
-	desc "Generate PgQ and Londiste config from database.yml"
-	task :gen_config do
-		unless File.exists? File.join(RAILS_ROOT, 'config', 'pgq')
-			puts "ERROR: directory config/pgq do not exists"
-			exit
-		end
-		unless File.exists? File.join(RAILS_ROOT, 'config', 'database.yml')
-			puts "ERROR: file config/database.yml do not exists"
-			exit
-		end
+    if File.exists? pgq_config
+      puts "ERROR: file #{pgq_config} already exists"
+      exit
+    end
 
-		if File.exists? pgq_config
-			puts "ERROR: file #{pgq_config} already exists"
-			exit
-		end
+    config = YAML.load File.read(File.join(Rails.root, 'config', 'database.yml'))
 
-		config = YAML.load File.read(File.join(RAILS_ROOT, 'config', 'database.yml'))
+    if config[Rails.env].nil? or config[Rails.env].empty?
+      puts "ERROR: there no '#{Rails.env}' section in database.yml"
+      exit
+    end
 
-		if config[RAILS_ENV].nil? or config[RAILS_ENV].empty?
-			puts "ERROR: there no '#{RAILS_ENV}' section in database.yml"
-			exit
-		end
+    unless config[Rails.env]['adapter'] == 'postgresql'
+      puts "ERROR: only postgresql adapter support PgQ"
+      exit
+    end
 
-		unless config[RAILS_ENV]['adapter'] == 'postgresql'
-			puts "ERROR: only postgresql adapter support PgQ"
-			exit
-		end
-
-		file = <<END
+    file = <<END
 [pgqadm]
 job_name = pgq_job
-db = #{generate_connectin_string config[RAILS_ENV]}
+db = #{generate_connectin_string config[Rails.env]}
 # how often to run maintenance [seconds]
 maint_delay = 600
 # how often to check for activity [seconds]
@@ -58,25 +58,25 @@ logfile = ./log/%(job_name)s.log
 pidfile = ./tmp/%(job_name)s.pid
 END
 
-		f = File.new pgq_config, 'w'
-		f.write file
+    f = File.new pgq_config, 'w'
+    f.write file
 
-		slave = config["#{RAILS_ENV}_slave"]
-		if slave.nil? or slave.empty? or slave['adapter'] != 'postgresql'
-			puts "WARNING: '#{RAILS_ENV}_slave' section not found or incorrect in database.yml"
-		else
-			file = <<END
+    slave = config["#{Rails.env}_slave"]
+    if slave.nil? or slave.empty? or slave['adapter'] != 'postgresql'
+      puts "WARNING: '#{Rails.env}_slave' section not found or incorrect in database.yml"
+    else
+      file = <<END
 [londiste]
 
 # should be unique
 job_name = master_to_slave
 
 # source queue location
-provider_db = #{generate_connectin_string config[RAILS_ENV]}
+provider_db = #{generate_connectin_string config[Rails.env]}
 
 # target database - it's preferable to run "londiste replay"
 # on same machine and use unix-socket or localhost to connect
-subscriber_db = #{generate_connectin_string config["#{RAILS_ENV}_slave"]}
+subscriber_db = #{generate_connectin_string config["#{Rails.env}_slave"]}
 
 # source queue name
 pgq_queue_name = londiste.replika
@@ -90,11 +90,11 @@ pidfile = ./tmp/pids/%(job_name)s.pid
 # max locking time on provider (in seconds, float)
 #lock_timeout = 10.0
 END
-			f.write file
-		end
+      f.write file
+    end
 
-		f.close
-	end
+    f.close
+  end
 
   desc "Install PgQ"
   task :install do
@@ -133,9 +133,9 @@ namespace :londiste do
     "londiste.py #{londiste_config}"
   end
 
-	def londiste_config
-		pgq_config
-	end
+  def londiste_config
+    pgq_config
+  end
 
   namespace :provider do
     desc "Install Londiste on provider"
@@ -250,12 +250,12 @@ namespace :db do
       version = ENV["VERSION"] ? ENV["VERSION"].to_i : nil
       raise "VERSION is required" unless version
       ActiveRecord::Migrator.run(:up, "db/migrate/", version)
-			#run migration up on slave server if it defined
-			unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
-				ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
-				ActiveRecord::Base.run_on_slave_db = true
-				ActiveRecord::Migrator.run(:up, "db/migrate/", version)
-			end
+      #run migration up on slave server if it defined
+      unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
+        ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
+        ActiveRecord::Base.run_on_slave_db = true
+        ActiveRecord::Migrator.run(:up, "db/migrate/", version)
+      end
       Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
     end
 
@@ -264,11 +264,11 @@ namespace :db do
       version = ENV["VERSION"] ? ENV["VERSION"].to_i : nil
       raise "VERSION is required" unless version
       ActiveRecord::Migrator.run(:down, "db/migrate/", version)
-			unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
-				ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
-				ActiveRecord::Base.run_on_slave_db = true
-				ActiveRecord::Migrator.run(:down, "db/migrate/", version)
-			end
+      unless ActiveRecord::Base.configurations[RAILS_ENV + "_slave"].blank?
+        ActiveRecord::Base.establish_connection((RAILS_ENV + "_slave").to_sym)
+        ActiveRecord::Base.run_on_slave_db = true
+        ActiveRecord::Migrator.run(:down, "db/migrate/", version)
+      end
       Rake::Task["db:schema:dump"].invoke if ActiveRecord::Base.schema_format == :ruby
     end
   end
