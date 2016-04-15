@@ -16,20 +16,33 @@ module Pgq
   end
 
   def pgq_insert_event(queue_name, ev_type, ev_data, extra1 = nil, extra2 = nil, extra3 = nil, extra4 = nil)
-    result = connection.select_value("SELECT pgq.insert_event(#{connection.quote(queue_name)}, #{connection.quote ev_type}, #{connection.quote ev_data}, #{connection.quote extra1}, #{connection.quote extra2}, #{connection.quote extra3}, #{connection.quote extra4})")
+    result = connection.select_value("SELECT pgq.insert_event(#{connection.quote(queue_name)}, #{connection.quote(ev_type)}, #{connection.quote(ev_data)}, #{connection.quote(extra1)}, #{connection.quote(extra2)}, #{connection.quote(extra3)}, #{connection.quote(extra4)})")
     result ? result.to_i : nil
   end
 
   def pgq_register_consumer(queue_name, consumer_id)
-    connection.select_value("SELECT pgq.register_consumer(#{connection.quote(queue_name)}, #{connection.quote consumer_id})").to_i
+    connection.select_value("SELECT pgq.register_consumer(#{connection.quote(queue_name)}, #{connection.quote(consumer_id)})").to_i
   end
 
   def pgq_unregister_consumer(queue_name, consumer_id)
-    connection.select_value("SELECT pgq.unregister_consumer(#{connection.quote(queue_name)}, #{connection.quote consumer_id})").to_i
+    connection.select_value("SELECT pgq.unregister_consumer(#{connection.quote(queue_name)}, #{connection.quote(consumer_id)})").to_i
+  end
+
+  def pgq_coop_register_subconsumer(queue_name, consumer_id, subconsumer_id)
+    connection.select_value("SELECT pgq_coop.register_subconsumer(#{connection.quote(queue_name)}, #{connection.quote(consumer_id)}, #{connection.quote(subconsumer_id)})").to_i
+  end
+
+  def pgq_coop_unregister_subconsumer(queue_name, consumer_id, subconsumer_id)
+    connection.select_value("SELECT pgq_coop.unregister_consumer(#{connection.quote(queue_name)}, #{connection.quote(consumer_id)}, #{connection.quote(subconsumer_id)})").to_i
   end
 
   def pgq_next_batch(queue_name, consumer_id)
-    result = connection.select_value("SELECT pgq.next_batch(#{connection.quote(queue_name)}, #{connection.quote consumer_id})")
+    result = connection.select_value("SELECT pgq.next_batch(#{connection.quote(queue_name)}, #{connection.quote(consumer_id)})")
+    result ? result.to_i : nil
+  end
+
+  def pgq_coop_next_batch(queue_name, consumer_id, subconsumer_id)
+    result = connection.select_value("SELECT pgq_coop.next_batch(#{connection.quote(queue_name)}, #{connection.quote(consumer_id)}, #{connection.quote(subconsumer_id)})")
     result ? result.to_i : nil
   end
   
@@ -47,6 +60,10 @@ module Pgq
   
   def pgq_finish_batch(batch_id)
     connection.select_value("SELECT pgq.finish_batch(#{batch_id})")
+  end
+
+  def pgq_coop_finish_batch(batch_id)
+    connection.select_value("SELECT pgq_coop.finish_batch(#{batch_id})")
   end
 
   # Возвращает
