@@ -4,6 +4,7 @@ class PgqEvent
   def initialize pgq_tuple = nil, use_yaml = true
     if pgq_tuple.is_a? Hash
       @id = pgq_tuple['ev_id']
+      @time = pgq_tuple['ev_time']
       @type = pgq_tuple['ev_type']
       if use_yaml
         @data = YAML.load pgq_tuple['ev_data']

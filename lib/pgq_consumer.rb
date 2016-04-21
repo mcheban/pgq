@@ -34,6 +34,18 @@ class PgqConsumer
     true
   end
 
+  def perform_batch_bulk
+    events = get_batch_events
+    logger.debug "batch(#{queue}): #{@batch_id} events: #{events.length}" if logger.present? && events.present?
+
+    return unless events
+
+    perform_events(prepare_event(events))
+
+    finish_batch(events.length)
+    true
+  end
+
   def add_event(data)
     self.class.add_event(data)
   end
@@ -94,8 +106,15 @@ class PgqConsumer
     PgqEvent.new(event)
   end
 
+  def prepare_events(events)
+    events.map { |event| prepare_event(event) }
+  end
+
   def self.quote(text)
     ActiveRecord::Base.connection.quote(text)
   end
-  
+
+  def perform_events(events)
+    raise NotImplementedError.new('should be implemented in derived class')
+  end
 end
