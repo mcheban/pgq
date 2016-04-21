@@ -38,9 +38,9 @@ class PgqConsumer
     events = get_batch_events
     logger.debug "batch(#{queue}): #{@batch_id} events: #{events.length}" if logger.present? && events.present?
 
-    return unless events
+    return if !events
 
-    perform_events(prepare_event(events))
+    perform_events(prepare_events(events))
 
     finish_batch(events.length)
     true
