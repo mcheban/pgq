@@ -51,11 +51,11 @@ module Pgq
   end
   
   def pgq_event_failed(batch_id, event_id, reason)
-    connection.select_value("SELECT pgq.event_failed(?, ?, ?)", batch_id, event_id, reason).to_i
+    connection.select_value("SELECT pgq.event_failed(#{connection.quote(batch_id)}, #{connection.quote(event_id)}, #{connection.quote(reason)})").to_i
   end
   
   def pgq_event_retry(batch_id, event_id, retry_seconds)
-    connection.select_value("SELECT pgq.event_retry(?, ?, ?)", batch_id, event_id, retry_seconds).to_i
+    connection.select_value("SELECT pgq.event_retry(#{connection.quote(batch_id)}, #{connection.quote(event_id)}, #{connection.quote(retry_seconds)})").to_i
   end
   
   def pgq_finish_batch(batch_id)
