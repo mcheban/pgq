@@ -40,7 +40,7 @@ class PgqConsumer
 
     return if !events
 
-    perform_events(prepare_events(events))
+    perform_events(events)
 
     finish_batch(events.length)
     true
