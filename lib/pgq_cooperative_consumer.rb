@@ -15,7 +15,7 @@ class PgqCooperativeConsumer < PgqConsumer
   end
 
   def finish_batch(count = nil)
-    ActiveRecord::Base.pgq_finish_batch(@batch_id)
+    ActiveRecord::Base.pgq_coop_finish_batch(@batch_id)
   end
 
 end
